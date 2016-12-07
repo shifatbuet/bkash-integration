@@ -1,0 +1,81 @@
+package com.nexkode.parcio.data.bkash;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.json.JSONObject;
+
+import com.nexkode.parcio.util.RestUtil;
+
+/**
+ * @File CheckBkash.java
+ * @author shifatul islam | shifat.it@gmail.com
+ * @cell : +8801745944843
+ */
+
+
+public class CheckBkash {
+
+	public Map<String,String> getTransferredBkashMoney(String mobileNumber,String transactionId){
+		Map<String, String> map = new HashMap<String, String>();
+		StringBuilder url = new StringBuilder() ;
+		StringBuffer response = new StringBuffer();
+		URL obj;
+		
+		if(mobileNumber.length()!= RestUtil.MOBILE_NUMBER_LENGTH || !mobileNumber.startsWith(RestUtil.MOBILE_NUMBER_STARTS) || transactionId.length()!= RestUtil.TRANSACTION_ID_LENGTH){
+			map.put(RestUtil.BKASH_ERROR_TYPE_M_T, RestUtil.BKASH_INVALID_MESSAGE);
+			return map;
+		}
+		
+		
+		url.append(RestUtil.BKASH_URL)
+		   .append(RestUtil.BKASH_USER_PARAM).append(RestUtil.BKASH_USERNAME)
+		   .append(RestUtil.BKASH_PASSWORD_PARAM).append(RestUtil.BKASH_PASSWORD)
+		   .append(RestUtil.BKASH_MOBILE_PARAM).append(mobileNumber)
+		   .append(RestUtil.BKASH_TRANSACTION_PARAM).append(transactionId);
+		try {
+			String inputLine;
+			obj = new URL(url.toString());
+			HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+			con.setRequestMethod(RestUtil.HTTP_REQUEST_TYPE_GET);
+			
+			if(con.getResponseCode() != RestUtil.BKASH_SERVER_RESPONSE_SUCCESS_CODE){
+				map.put(RestUtil.BKASH_ERROR_TYPE_SERVER, RestUtil.BKASH_SERVER_ERROR);
+				return map;
+			}
+			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			while ((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
+			}
+			in.close();
+		} catch (ProtocolException e) {
+			e.printStackTrace();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+			
+		}
+		JSONObject  jsonObject = new JSONObject(response.toString());
+		JSONObject transactionData = jsonObject.getJSONObject(RestUtil.TRANSACTION);
+		map.put(RestUtil.TRX_ID, transactionData.getString(RestUtil.TRX_ID));
+		map.put(RestUtil.AMOUNT, transactionData.getString(RestUtil.AMOUNT));
+		map.put(RestUtil.MERCHANT_COUNTER, transactionData.getString(RestUtil.MERCHANT_COUNTER));
+		map.put(RestUtil.CURRENCY, transactionData.getString(RestUtil.CURRENCY));
+		map.put(RestUtil.DATE_TIME, transactionData.getString(RestUtil.DATE_TIME));
+		map.put(RestUtil.RECEIVER, transactionData.getString(RestUtil.RECEIVER));
+		map.put(RestUtil.REFERENCE, transactionData.getString(RestUtil.REFERENCE));
+		map.put(RestUtil.SENDER, transactionData.getString(RestUtil.SENDER));
+		map.put(RestUtil.SERVICE, transactionData.getString(RestUtil.SERVICE));
+		map.put(RestUtil.TRX_STATUS, transactionData.getString(RestUtil.TRX_STATUS));
+		return map;
+		
+	}
+}
